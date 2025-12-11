@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>肿瘤妇科放疗攻略 - 上海陪诊小河</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <style>
+        /* 隐藏滚动条 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        body { 
+            background-color: #FDFBF7; 
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* 弹窗动画 */
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .modal-animate { animation: fadeIn 0.2s ease-out forwards; }
+
+        /* 二维码修正样式 */
+        #qrcode canvas { display: none !important; }
+        #qrcode img { display: block !important; margin: 0 auto; max-width: 100%; height: auto; }
+        
+        /* 平滑滚动 */
+        html { scroll-behavior: smooth; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
+
+        // --- 图标组件 ---
+        const Icon = ({ name, className }) => {
+            const icons = {
+                Clock: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+                MapPin: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>,
+                FileText: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>,
+                Activity: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
+                AlertCircle: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>,
+                Info: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>,
+                ArrowUp: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>,
+                Calendar: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>,
+                Phone: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
+                MessageCircleDots: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/></svg>,
+                Zap: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            };
+            return icons[name] || null;
+        };
+
+        // --- 辅助组件 ---
+        function Card({ children, className = "" }) {
+            return (
+                <div className={`bg-white p-6 rounded-2xl shadow-sm border border-stone-100 transition-shadow duration-300 ${className}`}>
+                    {children}
+                </div>
+            );
+        }
+
+        // [修改] Step 组件：增加点击交互和条件样式
+        function Step({ id, number, title, desc, note, badge, isActive, onSelect }) {
+            return (
+                <div 
+                    onClick={() => onSelect(id)}
+                    className={`relative pl-8 pb-8 last:pb-0 group cursor-pointer transition-all duration-200`}
+                >
+                    {/* 竖线 */}
+                    <div className="absolute left-[11px] top-6 bottom-0 w-0.5 bg-emerald-100 last:hidden"></div>
+                    
+                    {/* 圆圈数字 - 根据 isActive 变色 */}
+                    <div className={`absolute left-0 top-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 border-white shadow-sm z-10 transition-all duration-300 
+                        ${isActive 
+                            ? 'bg-orange-500 text-white ring-4 ring-orange-100 scale-110' 
+                            : 'bg-emerald-500 text-white ring-1 ring-emerald-100 group-hover:scale-110 group-hover:bg-emerald-400'
+                        }`}
+                    >
+                        {number}
+                    </div>
+                    
+                    {/* 内容 */}
+                    <div className={`transition-all duration-300 p-2 -my-2 -mr-2 rounded-lg ${isActive ? 'bg-orange-50/50' : 'hover:bg-stone-50'}`}>
+                        <div className="flex items-center gap-2">
+                            <h3 className={`font-bold text-sm transition-colors ${isActive ? 'text-orange-700' : 'text-stone-700'}`}>
+                                {title}
+                            </h3>
+                            {badge && <span className="bg-emerald-50 text-emerald-600 text-[10px] px-1.5 py-0.5 rounded border border-emerald-100 font-medium">{badge}</span>}
+                        </div>
+                        <p className="text-sm text-stone-600 mt-1 leading-relaxed select-none">{desc}</p>
+                        {note && (
+                            <p className="text-xs text-orange-600 mt-2 font-medium bg-orange-50 border border-orange-100 inline-block px-2 py-1 rounded-lg">
+                                💡 {note}
+                            </p>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        function SectionHeader({ title, iconName }) {
+            return (
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-stone-200">
+                    <div className="p-2 bg-emerald-100 text-emerald-700 rounded-lg">
+                        <Icon name={iconName} className="w-5 h-5" />
+                    </div>
+                    <h2 className="text-xl font-bold text-stone-800">{title}</h2>
+                </div>
+            );
+        }
+
+        // --- 内容区块 (传入 activeStep 和 onStepSelect) ---
+
+        function Phase1({ activeStep, onStepSelect }) {
+            return (
+                <Card>
+                    <div className="space-y-2">
+                        <Step id="p1-1" isActive={activeStep === 'p1-1'} onSelect={onStepSelect}
+                            number="1" title="术后首次复诊" desc="前往 1号楼2楼 妇科诊区。医生根据病理报告判断是否需要放疗。" badge="2F" />
+                        <Step id="p1-2" isActive={activeStep === 'p1-2'} onSelect={onStepSelect}
+                            number="2" title="预约放疗专家" desc="如需放疗，预约妇科放疗门诊，或直接去 1号楼 810/811室 咨询。" badge="2F/8F" />
+                        <Step id="p1-3" isActive={activeStep === 'p1-3'} onSelect={onStepSelect}
+                            number="3" title="预约定位 (关键)" desc="医生开具检查单。需完成：打印病史 -> 缴费 -> 按时间到 B2 模拟定位。" note="定位后身上会有画线，请勿擦洗！" badge="B2" />
+                        <Step id="p1-4" isActive={activeStep === 'p1-4'} onSelect={onStepSelect}
+                            number="4" title="回家等待" desc="定位结束后，回家等待电话通知（通常2-3天）。" />
+                    </div>
+                </Card>
+            );
+        }
+
+        function Phase2({ activeStep, onStepSelect }) {
+            return (
+                <div className="space-y-4">
+                    {/* 繁忙预警 */}
+                    <div className="bg-gradient-to-r from-orange-50 to-red-50 p-4 rounded-xl border border-orange-100 flex items-start gap-3">
+                        <div className="bg-orange-100 p-2 rounded-full text-orange-600 shrink-0">
+                            <Icon name="Activity" className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-orange-800 text-sm"> 复位-拍片-纹身</h4>
+                            <p className="text-xs text-orange-700 mt-1">
+                                <strong>验证片</strong>和<strong>纹身</strong>通常都需要单独预约，并不一定能都在复位当天完成
+                            </p>
+                        </div>
+                    </div>
+
+                    <Card>
+                        <div className="space-y-2">
+                            <Step id="p2-1" isActive={activeStep === 'p2-1'} onSelect={onStepSelect}
+                                number="1" title="接收通知" desc="接到复位电话后，按要求时间来院。" />
+                            <Step id="p2-2" isActive={activeStep === 'p2-2'} onSelect={onStepSelect}
+                                number="2" title="登记与挂号" desc="先到 1号楼 810室 进行信息登记，并现场挂号。" badge="8F" />
+                            <Step id="p2-3" isActive={activeStep === 'p2-3'} onSelect={onStepSelect}
+                                number="3" title="进行复位" desc="前往 地下二楼(B2) 模拟定位室进行复位。" badge="B2" />
+                            <Step id="p2-4" isActive={activeStep === 'p2-4'} onSelect={onStepSelect}
+                                number="4" title="预约拍片 " desc="复位完成后：①去打印病史并缴费；②带放疗单去B2服务台预约拍验证片。" badge="B2" />
+                            <Step id="p2-5" isActive={activeStep === 'p2-5'} onSelect={onStepSelect}
+                                number="5" title="拍验证片" desc="在B2完成拍片。" badge="B2" />
+                            <Step id="p2-6" isActive={activeStep === 'p2-6'} onSelect={onStepSelect}
+                                number="6" title="医生审核签字" desc="拍完片回到 1号楼 810/811室，等医生审核签字。" badge="8F" />
+                            <Step id="p2-7" isActive={activeStep === 'p2-7'} onSelect={onStepSelect}
+                                number="7" title="预约纹身" desc="拿着签好字的单子，回 B2 服务台预约纹身。" badge="B2" />
+                        </div>
+                    </Card>
+                </div>
+            );
+        }
+
+        function Phase3({ activeStep, onStepSelect }) {
+            return (
+                <Card>
+                    <div className="text-center py-6">
+                        <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Icon name="Clock" className="w-8 h-8" />
+                        </div>
+                        <h3 className="font-bold text-stone-700 mb-2">准备就绪，等待启动</h3>
+                        <p className="text-sm text-stone-500 leading-relaxed max-w-xs mx-auto">
+                            所有准备工作已完成。请回家保持电话畅通，等待服务台通知具体的<b>开始放疗时间</b>。
+                        </p>
+                        <div className="mt-4 inline-block bg-stone-50 text-stone-600 text-xs px-3 py-1 rounded-full border border-stone-200">
+                            💡 期间请继续保护好身上的定位线
+                        </div>
+                    </div>
+                </Card>
+            );
+        }
+
+        function Phase4({ activeStep, onStepSelect }) {
+            return (
+                <div className="space-y-4">
+                    <Card>
+                        <div className="space-y-2">
+                            <Step id="p4-1" isActive={activeStep === 'p4-1'} onSelect={onStepSelect}
+                                number="1" title="开始治疗" desc="按通知时间，每日到 B2 放疗机房进行治疗。" badge="B2" />
+                            <Step id="p4-2" isActive={activeStep === 'p4-2'} onSelect={onStepSelect}
+                                number="2" title="每周复诊 (必做)" desc="放疗期间，每周必须到 1号楼 810/811 找主管医生复诊一次，处理副作用。" badge="8F" />
+                            <Step id="p4-3" isActive={activeStep === 'p4-3'} onSelect={onStepSelect}
+                                number="3" title="随访反馈" desc="关注“复旦大学附属肿瘤医院妇科”公众号，及时填写随访问卷。" />
+                        </div>
+                    </Card>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-stone-100">
+                            <h4 className="font-bold text-stone-700 text-sm mb-2">📍 1号楼 (门诊)</h4>
+                            <p className="text-xs text-stone-500">810 / 811 室</p>
+                            <p className="text-xs text-stone-400 mt-1">医生办公、签字、复诊</p>
+                        </div>
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-stone-100">
+                            <h4 className="font-bold text-stone-700 text-sm mb-2">📍 地下二楼 (B2)</h4>
+                            <p className="text-xs text-stone-500">放疗中心</p>
+                            <p className="text-xs text-stone-400 mt-1">定位、复位、治疗、纹身</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- 主 App 组件 ---
+
+        function App() {
+            const [activeTab, setActiveTab] = useState('phase1');
+            const [activeStep, setActiveStep] = useState(null); // [新增] 记录被点击的步骤ID
+            const [showQR, setShowQR] = useState(false);
+            const qrInstanceRef = useRef(null);
+
+            const p1Ref = useRef(null);
+            const p2Ref = useRef(null);
+            const p3Ref = useRef(null);
+            const p4Ref = useRef(null);
+
+            const tabs = [
+                { id: 'phase1', label: '1.评估定位', icon: 'MapPin', ref: p1Ref },
+                { id: 'phase2', label: '2.复位验证', icon: 'Zap', ref: p2Ref },
+                { id: 'phase3', label: '3.等待通知', icon: 'Clock', ref: p3Ref },
+                { id: 'phase4', label: '4.治疗复诊', icon: 'Calendar', ref: p4Ref },
+            ];
+
+            const scrollToSection = (id, ref) => {
+                setActiveTab(id);
+                const offset = 150; 
+                const element = ref.current;
+                if (element) {
+                    const y = element.getBoundingClientRect().top + window.scrollY - offset;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                }
+            };
+
+            // 处理步骤点击
+            const handleStepSelect = (stepId) => {
+                // 如果再次点击已选中的，取消选中，或者保持选中，这里逻辑设为：点击即选中
+                setActiveStep(stepId === activeStep ? null : stepId); 
+            };
+
+            // 监听滚动，自动更新 Tab
+            useEffect(() => {
+                const handleScroll = () => {
+                    const scrollY = window.scrollY;
+                    const offset = 200;
+                    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 20) {
+                        setActiveTab(tabs[tabs.length - 1].id);
+                        return;
+                    }
+                    let currentSection = tabs[0].id;
+                    for (const tab of tabs) {
+                        const element = tab.ref.current;
+                        if (element && element.offsetTop - offset <= scrollY) {
+                            currentSection = tab.id;
+                        }
+                    }
+                    setActiveTab(currentSection);
+                };
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            // 二维码逻辑
+            useEffect(() => {
+                const qrContainer = document.getElementById("qrcode");
+                if (qrContainer && !qrInstanceRef.current) {
+                    qrContainer.innerHTML = ""; 
+                    qrInstanceRef.current = new QRCode(qrContainer, {
+                        text: "https://u.wechat.com/EKcPjhL9GyGJtvlbGIc9Bbs",
+                        width: 200, 
+                        height: 200,
+                        colorDark : "#064e3b", 
+                        colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.H
+                    });
+
+                    setTimeout(() => {
+                        const canvas = qrContainer.querySelector('canvas');
+                        const img = qrContainer.querySelector('img');
+                        if (canvas && (!img || !img.src || img.style.display === 'none')) {
+                            const dataUrl = canvas.toDataURL("image/png");
+                            let targetImg = img;
+                            if (!targetImg) {
+                                targetImg = document.createElement("img");
+                                qrContainer.appendChild(targetImg);
+                            }
+                            targetImg.src = dataUrl;
+                            targetImg.style.display = "block";
+                            canvas.style.display = "none";
+                        }
+                    }, 100); 
+                }
+            }, []);
+
+            return (
+                <div className="min-h-screen pb-20 selection:bg-emerald-100">
+                    
+                    {/* 微信弹窗 */}
+                    <div 
+                        id="qrModal" 
+                        className={`fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm transition-all duration-300 ${showQR ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                        onClick={() => setShowQR(false)}
+                    >
+                        <div 
+                            className={`bg-white rounded-2xl p-6 max-w-sm w-full relative shadow-2xl transform transition-all duration-300 ${showQR ? 'scale-100' : 'scale-95'}`}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <button onClick={() => setShowQR(false)} className="absolute top-3 right-4 text-gray-400 hover:text-gray-700 text-3xl font-light focus:outline-none">&times;</button>
+                            
+                            <div className="text-center mt-2">
+                                <h3 className="text-xl font-bold text-slate-800 mb-1">添加微信联系</h3>
+                                <p className="text-sm text-slate-500 mb-4">长按识别或扫一扫下方二维码</p>
+                                
+                                <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 mb-4 flex justify-center items-center">
+                                    <div id="qrcode"></div>
+                                </div>
+                                
+                                <div className="font-bold text-teal-700 text-lg">上海陪诊小河</div>
+                                <div className="text-slate-500 text-sm flex items-center justify-center gap-1 mt-1">
+                                    <Icon name="Phone" className="w-3 h-3" />
+                                    <span>17898872018</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Header */}
+                    <header className="bg-white shadow-sm sticky top-0 z-50">
+                        <div className="px-5 py-4 flex justify-between items-center">
+                            <div className="flex flex-col">
+                                <h1 className="text-stone-800 font-bold text-base leading-none tracking-tight">上海陪诊小河</h1>
+                                <div className="flex items-center gap-1 text-stone-400 text-xs mt-1.5 font-medium tracking-wide">
+                                    <Icon name="Phone" className="w-3 h-3" />
+                                    <span>17898872018</span>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setShowQR(true)}
+                                className="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-full transition-all text-xs md:text-sm font-bold shrink-0 cursor-pointer shadow-sm"
+                            >
+                                <Icon name="MessageCircleDots" className="w-4 h-4" />
+                                <span>需代办/咨询?</span>
+                            </button>
+                        </div>
+                    
+                        {/* 导航栏 (恢复绿色选中态) */}
+                        <div className="bg-white flex overflow-x-auto border-t border-stone-100 no-scrollbar">
+                            {tabs.map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => scrollToSection(tab.id, tab.ref)}
+                                    className={`flex-1 py-3 px-2 text-sm font-medium flex flex-col items-center gap-1 min-w-[80px] transition-all whitespace-nowrap ${
+                                        activeTab === tab.id
+                                            ? 'text-emerald-700 border-b-2 border-emerald-600 bg-emerald-50/30'
+                                            : 'text-stone-400 hover:text-stone-600 hover:bg-stone-50'
+                                    }`}
+                                >
+                                    <Icon name={tab.icon} className="w-4 h-4" />
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+                    </header>
+
+                    {/* Main Content */}
+                    <main className="max-w-2xl mx-auto p-4 space-y-8 mt-2">
+                        <div className="px-2 pt-2 pb-0">
+                            <h1 className="text-2xl font-bold text-emerald-900 tracking-tight mb-2 flex items-center gap-2">
+                                <Icon name="Activity" className="w-6 h-6 text-emerald-600" />
+                                肿瘤妇科放疗攻略
+                            </h1>
+                            <p className="text-stone-500 text-sm ml-1 border-l-2 border-stone-200 pl-3 leading-relaxed">
+                                复旦大学附属肿瘤医院 · 妇科放疗全流程指引
+                            </p>
+                        </div>
+
+                        <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 flex gap-3">
+                            <Icon name="Info" className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                            <div className="text-sm text-emerald-800 leading-relaxed">
+                                本指南梳理了从<strong>术后复诊</strong>到<strong>正式放疗</strong>的全流程。您可以<strong>点击下方的步骤</strong>来标记当前的进度。
+                            </div>
+                        </div>
+
+                        {/* Phase 1 */}
+                        <div ref={p1Ref} className="scroll-mt-40">
+                            <SectionHeader title="第一阶段：评估与定位" iconName="MapPin" />
+                            <Phase1 activeStep={activeStep} onStepSelect={handleStepSelect} />
+                        </div>
+
+                        {/* Phase 2 */}
+                        <div ref={p2Ref} className="scroll-mt-40">
+                            <SectionHeader title="第二阶段：复位与验证" iconName="Zap" />
+                            <Phase2 activeStep={activeStep} onStepSelect={handleStepSelect} />
+                        </div>
+
+                        {/* Phase 3 */}
+                        <div ref={p3Ref} className="scroll-mt-40">
+                            <SectionHeader title="第三阶段：等待通知" iconName="Clock" />
+                            <Phase3 activeStep={activeStep} onStepSelect={handleStepSelect} />
+                        </div>
+
+                        {/* Phase 4 */}
+                        <div ref={p4Ref} className="scroll-mt-40">
+                            <SectionHeader title="第四阶段：治疗与复诊" iconName="Calendar" />
+                            <Phase4 activeStep={activeStep} onStepSelect={handleStepSelect} />
+                        </div>
+
+                    </main>
+                    
+                    {/* Footer */}
+                    <footer className="text-center text-stone-400 text-xs py-8 max-w-2xl mx-auto border-t border-stone-200 mt-8 px-4">
+                        <p>注：内容仅供经验参考，具体请以医院官方规定为准。</p>
+                        <p className="mt-2 opacity-60">
+                            需要帮助? <button onClick={() => setShowQR(true)} className="underline hover:text-stone-600">联系小河</button>
+                        </p>
+                    </footer>
+                    
+                    <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="fixed bottom-6 right-6 bg-emerald-600 text-white p-3 rounded-full shadow-lg hover:bg-emerald-700 transition-colors z-10 opacity-80 hover:opacity-100">
+                        <Icon name="ArrowUp" className="w-5 h-5" />
+                    </button>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
